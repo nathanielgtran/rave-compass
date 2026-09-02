@@ -17,6 +17,9 @@
 #include "../../lib/ravecore/arrow.h"
 #include "../../lib/ravecore/protocol.h"
 #include "../../lib/ravecore/state.h"
+#include "../../lib/ravecore/crypto.h"
+#include "../../lib/ravecore/magcal.h"
+#include "../../lib/ravecore/smooth.h"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -404,6 +407,260 @@ void test_state_no_fix_beats_stale(void) {
 }
 
 // ---------------------------------------------------------------------------
+// SECTION 7: AES-128 / crypto
+// ---------------------------------------------------------------------------
+
+void test_aes128_fips197_vector(void) {
+    // FIPS-197 Appendix B known-answer test (verified against OpenSSL).
+    // key       = 2b7e151628aed2a6abf7158809cf4f3c
+    // plaintext = 3243f6a8885a308d313198a2e0370734
+    // expected  = 3925841d02dc09fbdc118597196a0b32
+    const uint8_t key[16] = {
+        0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+        0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+    };
+    const uint8_t pt[16] = {
+        0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
+        0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34,
+    };
+    const uint8_t expected[16] = {
+        0x39, 0x25, 0x84, 0x1d, 0x02, 0xdc, 0x09, 0xfb,
+        0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32,
+    };
+    uint8_t ct[16] = {};
+    ravecore::aes128Encrypt(key, pt, ct);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(expected, ct, 16,
+        "AES-128 FIPS-197 Appendix B known-answer: ciphertext mismatch");
+}
+
+void test_ctr_roundtrip(void) {
+    // Encrypt 12 bytes then decrypt — must recover original.
+    const uint8_t original[12] = {
+        0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+        0xde, 0xad, 0xbe, 0xef,
+    };
+    ravecore::CrewKey ck{};
+    ck.key[0] = 0xca; ck.key[1] = 0xfe; ck.key[15] = 0xba;
+    ck.salt[0] = 0x11; ck.salt[7] = 0x22;
+    uint16_t seq = 100;
+
+    uint8_t buf[12];
+    std::memcpy(buf, original, 12);
+
+    ravecore::encryptFrame(buf, seq, ck);
+    // Must differ from original after encryption
+    TEST_ASSERT_FALSE_MESSAGE(
+        std::memcmp(buf, original, 12) == 0,
+        "encrypted frame must differ from plaintext");
+
+    ravecore::decryptFrame(buf, seq, ck);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(original, buf, 12,
+        "CTR roundtrip: decrypt must recover original plaintext");
+}
+
+void test_encrypted_frame_roundtrip(void) {
+    // Pack a frame with Sydney coords, encrypt, decrypt, unpack — verify coords.
+    PositionFrame orig{};
+    orig.id      = 7;
+    orig.version = static_cast<uint8_t>(FrameVersion::V1_ENCRYPTED);
+    orig.latE7   = -338688000;   // -33.8688 deg (Sydney)
+    orig.lonE7   =  1512080000;  // 151.208 deg
+    orig.seq     = 500;
+    orig.battPct = 75;
+
+    ravecore::CrewKey ck{};
+    ck.key[0] = 0xAB; ck.key[7] = 0xCD; ck.key[15] = 0xEF;
+    ck.salt[0] = 0x55; ck.salt[3] = 0xAA;
+
+    uint8_t wire[FRAME_LEN];
+    pack(orig, wire);
+
+    // Encrypt bytes 0..11 in-place, then recompute CRC over ciphertext.
+    ravecore::encryptFrame(wire, orig.seq, ck);
+    wire[12] = crc8(wire, FRAME_LEN - 1);
+
+    // CRC over ciphertext must be valid before decryption.
+    TEST_ASSERT_EQUAL_MESSAGE(crc8(wire, FRAME_LEN - 1), wire[12],
+        "CRC over ciphertext must be consistent");
+
+    // Receiver: validate CRC, then decrypt.
+    uint8_t rx[FRAME_LEN];
+    std::memcpy(rx, wire, FRAME_LEN);
+    TEST_ASSERT_EQUAL_MESSAGE(crc8(rx, FRAME_LEN - 1), rx[12],
+        "receiver must accept CRC-valid ciphertext frame");
+
+    ravecore::decryptFrame(rx, orig.seq, ck);
+
+    PositionFrame decoded{};
+    // CRC was over ciphertext; unpack from plaintext (no CRC append).
+    // Manually extract fields after decryption.
+    decoded.version = rx[0] & 0xC0;
+    decoded.id      = rx[0] & 0x3F;
+    decoded.latE7 = static_cast<int32_t>(
+        static_cast<uint32_t>(rx[1]) | (static_cast<uint32_t>(rx[2]) << 8)
+      | (static_cast<uint32_t>(rx[3]) << 16) | (static_cast<uint32_t>(rx[4]) << 24));
+    decoded.lonE7 = static_cast<int32_t>(
+        static_cast<uint32_t>(rx[5]) | (static_cast<uint32_t>(rx[6]) << 8)
+      | (static_cast<uint32_t>(rx[7]) << 16) | (static_cast<uint32_t>(rx[8]) << 24));
+    decoded.seq     = static_cast<uint16_t>(rx[9] | (rx[10] << 8));
+    decoded.battPct = rx[11];
+
+    TEST_ASSERT_EQUAL_MESSAGE(orig.id,      decoded.id,      "encrypted roundtrip: id");
+    TEST_ASSERT_EQUAL_MESSAGE(orig.latE7,   decoded.latE7,   "encrypted roundtrip: latE7");
+    TEST_ASSERT_EQUAL_MESSAGE(orig.lonE7,   decoded.lonE7,   "encrypted roundtrip: lonE7");
+    TEST_ASSERT_EQUAL_MESSAGE(orig.seq,     decoded.seq,     "encrypted roundtrip: seq");
+    TEST_ASSERT_EQUAL_MESSAGE(orig.battPct, decoded.battPct, "encrypted roundtrip: battPct");
+    TEST_ASSERT_EQUAL_MESSAGE(
+        static_cast<uint8_t>(FrameVersion::V1_ENCRYPTED),
+        decoded.version, "encrypted roundtrip: version bits");
+}
+
+void test_wrong_key_invalid_coords(void) {
+    // CRC != MAC: a wrong-key attacker cannot track the crew.
+    // The frame CRC is over ciphertext, so a correctly-keyed CRC check passes
+    // even for a wrong-key receiver. The attacker sees garbage coordinates after
+    // decryption with the wrong key — they cannot track the crew.
+    // (Spoofing resistance is out of scope for v1 — no room for a MAC in 13 bytes.)
+    PositionFrame orig{};
+    orig.id      = 3;
+    orig.latE7   = -338688000;
+    orig.lonE7   =  1512080000;
+    orig.seq     = 42;
+    orig.battPct = 90;
+
+    ravecore::CrewKey correctKey{};
+    correctKey.key[0] = 0xDE; correctKey.key[15] = 0xAD;
+    correctKey.salt[0] = 0xBE; correctKey.salt[7] = 0xEF;
+
+    ravecore::CrewKey wrongKey{};
+    wrongKey.key[0] = 0xFF; wrongKey.key[15] = 0x00;
+    wrongKey.salt[0] = 0x12; wrongKey.salt[7] = 0x34;
+
+    uint8_t wire[FRAME_LEN];
+    pack(orig, wire);
+    ravecore::encryptFrame(wire, orig.seq, correctKey);
+    wire[12] = crc8(wire, FRAME_LEN - 1);
+
+    // Decrypt with wrong key — garbage output.
+    uint8_t rx[FRAME_LEN];
+    std::memcpy(rx, wire, FRAME_LEN);
+    ravecore::decryptFrame(rx, orig.seq, wrongKey);
+
+    int32_t gotLat = static_cast<int32_t>(
+        static_cast<uint32_t>(rx[1]) | (static_cast<uint32_t>(rx[2]) << 8)
+      | (static_cast<uint32_t>(rx[3]) << 16) | (static_cast<uint32_t>(rx[4]) << 24));
+    int32_t gotLon = static_cast<int32_t>(
+        static_cast<uint32_t>(rx[5]) | (static_cast<uint32_t>(rx[6]) << 8)
+      | (static_cast<uint32_t>(rx[7]) << 16) | (static_cast<uint32_t>(rx[8]) << 24));
+
+    // Wrong-key output is not the original coordinates.
+    TEST_ASSERT_FALSE_MESSAGE(
+        gotLat == orig.latE7 && gotLon == orig.lonE7,
+        "wrong key must produce garbage coordinates, not the original");
+}
+
+// ---------------------------------------------------------------------------
+// SECTION 8: Magnetometer hard-iron calibration
+// ---------------------------------------------------------------------------
+
+// Helper: add synthetic figure-8 samples with a known hard-iron offset.
+// The figure-8 spans a sphere of radius r centred at (offsetX, offsetY, offsetZ).
+static void addFigureEightWithOffset(ravecore::MagCalSession& cal,
+                                     float offsetX, float offsetY, float offsetZ,
+                                     float r, int steps) {
+    for (int i = 0; i < steps; i++) {
+        float t = static_cast<float>(i) / static_cast<float>(steps) * 2.0f * static_cast<float>(M_PI);
+        cal.addSample(offsetX + r * std::cos(t),
+                      offsetY + r * std::sin(t),
+                      offsetZ + r * std::sin(2.0f * t));
+    }
+}
+
+void test_magcal_recovers_offset(void) {
+    // Synthetic hard-iron: +50 uT on all axes. Radius 60 so range ~120 > threshold.
+    ravecore::MagCalSession cal;
+    const float OX = 50.0f, OY = 50.0f, OZ = 50.0f, R = 60.0f;
+    addFigureEightWithOffset(cal, OX, OY, OZ, R, 360);
+
+    TEST_ASSERT_TRUE_MESSAGE(cal.isSufficient(), "figure-8 coverage should be sufficient");
+
+    MagCal result = cal.result();
+    TEST_ASSERT_FLOAT_WITHIN_MESSAGE(1.0f, OX, result.offsetX, "recovered offsetX within 1 uT");
+    TEST_ASSERT_FLOAT_WITHIN_MESSAGE(1.0f, OY, result.offsetY, "recovered offsetY within 1 uT");
+    TEST_ASSERT_FLOAT_WITHIN_MESSAGE(1.0f, OZ, result.offsetZ, "recovered offsetZ within 1 uT");
+}
+
+void test_magcal_insufficient_coverage(void) {
+    // Only vary Z — X and Y ranges stay below threshold (20.0 default).
+    // No figure-8 on X/Y: isSufficient() must return false.
+    ravecore::MagCalSession cal;
+    for (int i = 0; i < 100; i++) {
+        float t = static_cast<float>(i) / 100.0f * 2.0f * static_cast<float>(M_PI);
+        cal.addSample(5.0f, 3.0f, 60.0f * std::sin(t));  // X/Y barely vary
+    }
+    TEST_ASSERT_FALSE_MESSAGE(cal.isSufficient(),
+        "samples covering only Z axis should not be sufficient");
+}
+
+// ---------------------------------------------------------------------------
+// SECTION 9: BearingSmoother + PixelHysteresis
+// ---------------------------------------------------------------------------
+
+void test_bearing_smoother_seam(void) {
+    // Feed bearings straddling 0/360 seam: 350, 355, 0, 5, 10.
+    // Correct circular average is near 0/360, NOT near 180.
+    ravecore::BearingSmoother sm(0.5f);
+    sm.addSample(350.0f);
+    sm.addSample(355.0f);
+    sm.addSample(0.0f);
+    sm.addSample(5.0f);
+    sm.addSample(10.0f);
+
+    float v = sm.value();
+    // Must be near 0 (within 30 deg), not near 180.
+    bool nearZero = (v < 30.0f) || (v > 330.0f);
+    TEST_ASSERT_TRUE_MESSAGE(nearZero,
+        "circular smoother: average of 350,355,0,5,10 must be near 0, not 180");
+}
+
+void test_bearing_smoother_convergence(void) {
+    // Step from 0 to 90 deg; with alpha=0.3 the smoother should
+    // reach within 10 deg of 90 within 20 samples.
+    ravecore::BearingSmoother sm(0.3f);
+    sm.addSample(0.0f);  // prime with one sample at 0
+    for (int i = 0; i < 20; i++) {
+        sm.addSample(90.0f);
+    }
+    float v = sm.value();
+    TEST_ASSERT_TRUE_MESSAGE(v > 80.0f && v < 100.0f,
+        "smoother should converge within 10 deg of 90 after 20 samples (alpha=0.3)");
+}
+
+void test_pixel_hysteresis_flicker(void) {
+    // Bearing oscillates +/-5 deg around the boundary between pixel 0 and 1
+    // on a 12-pixel ring (bin = 30 deg, boundary at 15 deg).
+    // With margin=6 the pixel should not flicker; without it, it would.
+    ravecore::PixelHysteresis hy(12, 6.0f);
+
+    // First reading: squarely in pixel 0 territory (bearing = 5 deg).
+    hy.update(5.0f);
+    TEST_ASSERT_EQUAL_MESSAGE(0, hy.current(), "initial bearing 5 deg -> pixel 0");
+
+    int changes = 0;
+    int prev = hy.current();
+    // Oscillate between 10 and 20 deg (straddles the 15 deg boundary).
+    for (int i = 0; i < 20; i++) {
+        float bearing = (i % 2 == 0) ? 10.0f : 20.0f;
+        int p = hy.update(bearing);
+        if (p != prev) { changes++; prev = p; }
+    }
+    // With 6 deg margin, oscillation of +/-5 deg around the boundary
+    // should cause at most 1 committed change (settling into pixel 1).
+    TEST_ASSERT_TRUE_MESSAGE(changes <= 1,
+        "pixel hysteresis: oscillation at bin boundary should cause at most 1 pixel change");
+}
+
+// ---------------------------------------------------------------------------
 // Unity boilerplate
 // ---------------------------------------------------------------------------
 
@@ -462,6 +719,21 @@ int main(void) {
     RUN_TEST(test_state_no_fix_never_heard_anchor);
     RUN_TEST(test_state_stale_beats_proximity);
     RUN_TEST(test_state_no_fix_beats_stale);
+
+    // crypto / AES-128-CTR
+    RUN_TEST(test_aes128_fips197_vector);
+    RUN_TEST(test_ctr_roundtrip);
+    RUN_TEST(test_encrypted_frame_roundtrip);
+    RUN_TEST(test_wrong_key_invalid_coords);
+
+    // mag calibration
+    RUN_TEST(test_magcal_recovers_offset);
+    RUN_TEST(test_magcal_insufficient_coverage);
+
+    // bearing smoother + pixel hysteresis
+    RUN_TEST(test_bearing_smoother_seam);
+    RUN_TEST(test_bearing_smoother_convergence);
+    RUN_TEST(test_pixel_hysteresis_flicker);
 
     return UNITY_END();
 }

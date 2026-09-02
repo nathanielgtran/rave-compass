@@ -21,7 +21,8 @@ uint8_t crc8(const uint8_t* data, size_t len) {
 // pack — little-endian serialisation + CRC append
 // ---------------------------------------------------------------------------
 size_t pack(const PositionFrame& f, uint8_t* buf) {
-    buf[0] = f.id;
+    // Top 2 bits = version (FrameVersion value shifted left 6), bottom 6 = id.
+    buf[0] = static_cast<uint8_t>((f.version & 0xC0) | (f.id & 0x3F));
 
     // int32 little-endian
     buf[1] = static_cast<uint8_t>(f.latE7 & 0xFF);
@@ -55,7 +56,9 @@ bool unpack(const uint8_t* buf, size_t len, PositionFrame& f) {
     uint8_t expected = crc8(buf, FRAME_LEN - 1);
     if (buf[FRAME_LEN - 1] != expected) return false;
 
-    f.id = buf[0];
+    // Decode version from top 2 bits; device id from bottom 6 bits.
+    f.version = buf[0] & 0xC0;
+    f.id      = buf[0] & 0x3F;
 
     f.latE7 = static_cast<int32_t>(
         static_cast<uint32_t>(buf[1])

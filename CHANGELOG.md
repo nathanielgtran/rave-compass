@@ -1,5 +1,6 @@
 # Changelog
 
+- feat-2: ravecore v1 — AES-128-CTR payload encryption (frame v1 via version bits in top 2 bits of id byte), streaming magnetometer hard-iron calibration (min/max figure-8 fit), circular bearing EMA + pixel hysteresis anti-flap; embedded l1lite_token + l1lite_beacon compile clean (board sub: adafruit_feather_nrf52840, same nRF52840 MCU — swap to Seeed BSP on hardware arrival); 49 tests green (was 40)
 - ci-1: GitHub Actions CI — native unit tests on ubuntu-latest for every PR + master push (GitHub-hosted deliberately: public repo, fork PRs must not touch private infra)
 - feat-1: firmware scaffold — PlatformIO native+nRF52 envs, ravecore pure-logic lib (geo/heading/arrow/protocol/state) + 38 unit tests all green (pio test -e native), protocol spec v0, hardware requirements doc
 
