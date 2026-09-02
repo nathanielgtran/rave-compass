@@ -1,5 +1,6 @@
 # Changelog
 
+- ci-1: GitHub Actions CI — native unit tests on ubuntu-latest for every PR + master push (GitHub-hosted deliberately: public repo, fork PRs must not touch private infra)
 - feat-1: firmware scaffold — PlatformIO native+nRF52 envs, ravecore pure-logic lib (geo/heading/arrow/protocol/state) + 38 unit tests all green (pio test -e native), protocol spec v0, hardware requirements doc
 
 - docs-7: Phase 6 stretch — "become the anchor" token-promotion mode (long-press promote, listen-before-promote guard, new epoch/id)
