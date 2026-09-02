@@ -18,10 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No cache:pip — setup-python's pip cache hard-fails when the repo has no
+      # requirements.txt/pyproject.toml; this repo only pip-installs platformio.
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
 
       - name: Cache PlatformIO
         uses: actions/cache@v4
