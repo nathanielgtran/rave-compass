@@ -9,16 +9,50 @@ Upgrade path later: custom round-LCD puck (Config 3) once the mesh + bearing log
 
 ## How it works
 
+### System overview
+
+```mermaid
+flowchart TB
+    subgraph mesh["915 MHz LoRa mesh — private channel + PSK, zero cell signal needed"]
+        P1["Pointer unit #1<br/>(Heltec V3 + FF firmware)<br/>OLED arrow + distance"]
+        P2["Pointer unit #2<br/>(Heltec V3 + FF firmware)"]
+        B1["Beacon #1<br/>(T1000-E, stock Meshtastic)"]
+        B2["Beacon #2<br/>(T1000-E)"]
+        B3["Beacon #3<br/>(T1000-E)"]
+        P1 <-->|position beacons 20-60s| B1
+        P1 <-->|mesh hop| P2
+        P2 <-->|position beacons| B2
+        B1 <-->|"relay (extends range)"| B3
+        P1 <-.->|out of direct range,<br/>reached via hops| B3
+    end
+    SAT(("GPS satellites<br/>(receive-only, always works)")) -.-> P1 & P2 & B1 & B2 & B3
+    B1 -->|BLE, optional| APP["Phone app (flight mode OK)<br/>map / bearing view"]
 ```
-        915 MHz LoRa mesh (private channel + PSK)
-   ┌──────────┐   position beacons    ┌──────────┐
-   │ Pointer  │ ◄──────────────────►  │ Beacon   │
-   │ (Heltec) │      every 20-60s     │ (T1000-E)│
-   └────┬─────┘                       └────┬─────┘
-        │                                  │ BLE (optional)
-   on-device arrow                    ┌────▼─────┐
-   + distance                         │ phone app│
-                                      └──────────┘
+
+### Position → arrow pipeline (on a pointer unit)
+
+```mermaid
+sequenceDiagram
+    participant F as Friend's beacon (T1000-E)
+    participant M as LoRa mesh
+    participant R as Pointer radio (SX1262)
+    participant C as Pointer MCU
+    participant U as Display
+
+    F->>F: GNSS fix (lat/long)
+    F->>M: broadcast position (encrypted, private PSK)
+    M->>R: direct or via mesh hops
+    R->>C: friend position + timestamp
+    C->>C: own GPS fix
+    C->>C: bearing = atan2(Δlong, Δlat)
+    C->>C: heading from QMC5883L magnetometer<br/>(figure-8 calibrated)
+    C->>C: arrow angle = bearing − heading<br/>distance = haversine(Δ)
+    alt distance > 30 m
+        C->>U: rotate arrow + show distance + last-heard age
+    else distance ≤ 30 m (GPS accuracy floor)
+        C->>U: "basically here" proximity mode
+    end
+    Note over C,U: stale positions greyed out, never shown as current
 ```
 
 1. **Position sensing**: every unit has GNSS — works with zero cell signal (GPS is receive-only).
@@ -47,7 +81,53 @@ Upgrade path later: custom round-LCD puck (Config 3) once the mesh + bearing log
 
 **Fleet total: ~AUD $400–450.**
 
-## Build phases
+## Build diagrams
+
+### Pointer unit — hardware assembly
+
+```mermaid
+flowchart LR
+    subgraph case["3D-printed case (Ender 3, PETG) — fully enclosed, branded label"]
+        subgraph board["Heltec WiFi LoRa 32 V3"]
+            MCU["ESP32-S3 MCU<br/>Friend Finder firmware"]
+            LORA["SX1262 LoRa radio<br/>(915 MHz ANZ)"]
+            OLED["0.96 in OLED<br/>arrow + distance"]
+        end
+        GPS["GPS module<br/>ATGM336H / NEO-6M"]
+        MAG["QMC5883L magnetometer<br/>(mounted AWAY from battery)"]
+        BAT["1,500 mAh LiPo"]
+    end
+    ANT["stub antenna<br/>(not a 20 cm whip)"]
+    USB["USB-C port<br/>(accessible for charging)"]
+
+    GPS -->|UART| MCU
+    MAG -->|I2C| MCU
+    MCU --- LORA
+    MCU --- OLED
+    BAT -->|JST| MCU
+    LORA --- ANT
+    USB --- MCU
+```
+
+Beacon units need no assembly — the T1000-E is a finished product; just flash region ANZ + private channel.
+
+### Build phases + gates
+
+```mermaid
+flowchart TD
+    P1["Phase 1 — Radio proof<br/>2x Heltec V3 + 1x T1000-E<br/>flash FF, private channel, walk-test"]
+    G1{"GATE: stock T1000-E positions<br/>visible on FF pointer?"}
+    ALT["Fallback: all-pointer fleet /<br/>firmware patch / phone-app display"]
+    P2["Phase 2 — Compass proof<br/>wire QMC5883L + GPS, calibrate,<br/>park test arrow accuracy + battery"]
+    P3["Phase 3 — Enclosure<br/>H1-style case on Ender 3<br/>GATE: passes the bag-check look test"]
+    P4["Phase 4 — Fleet build + field test<br/>full crew, park rehearsal, real event"]
+    P5["Phase 5 (stretch) — custom puck /<br/>LED-ring SKU / TDMA protocol"]
+
+    P1 --> G1
+    G1 -->|yes| P2
+    G1 -->|no| ALT --> P2
+    P2 --> P3 --> P4 --> P5
+```
 
 ### Phase 1 — Radio proof (order → 1 weekend)
 - Order 2 × Heltec V3 + modules + 1 × T1000-E (validate interop early).
