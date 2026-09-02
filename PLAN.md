@@ -138,6 +138,7 @@ flowchart TD
 3. **Power hardening** — bench the open flags (ring quiescent draw, GPS real current, duty-RX average); battery size from measurements, not datasheets.
 4. **Enclosure** — token puck (~50 mm, lanyard hole, diffuser face) + anchor box. Bag-check gate: fully enclosed, brand label, stub antenna, zero visible wires.
 5. **Fleet + field** — build 5 tokens, park rehearsal, then a real event. Log range/battery/arrow accuracy to `docs/field-tests/`. Measured 915 MHz crowd body-attenuation doesn't exist publicly — capture and publish it.
+6. **Stretch — "become the anchor" promotion mode.** Every unit runs the same firmware, so the anchor role is a runtime flag, not hardware. If the anchor dies (battery/lost/confiscated), any token promotes itself via a deliberate long-press sequence (e.g. hold button 10 s + confirm pattern on the ring — hard to trigger by accident in a pocket) and starts beaconing; the crew re-homes on it. Design notes: promoted anchor uses a new epoch/id so tokens don't mix stale coords; guard against two simultaneous promotions (listen-before-promote: refuse if a live anchor is heard); battery caveat — a promoted 500 mAh token beaconing + GPS runs hotter, fine for the tail of a night, not a fresh 7 h. Degrade loudly: ring shows "I am the anchor now" state.
 
 ## Design principles (canonical — CLAUDE.md refers here)
 
