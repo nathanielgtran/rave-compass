@@ -1,0 +1,29 @@
+# build artifacts
+build/
+dist/
+*.bin
+*.elf
+*.hex
+
+# environments / secrets
+.env
+.env.*
+*.local
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# node
+node_modules/
+
+# CAD temp/backup
+*.bak
+*.FCBak
+~$*
