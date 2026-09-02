@@ -1,76 +1,70 @@
 # rave-compass
 
-A physical "friend compass" for raves and festivals. Each person in the crew carries one; it points an arrow + distance toward everyone else — **with zero mobile signal**.
+An open-source "friend compass" for raves and festivals. One person (or the crew totem) carries an **anchor beacon**; everyone else wears a small **pointer token** whose LED arrow always points back to the crew — **with zero mobile signal**.
 
 ## The problem
 
-Festivals kill phones: dense crowds + overloaded or absent cell towers mean every "find my friends" app is dead on arrival. Paid offline trackers (Lynq etc.) are expensive, subscription-gated, or discontinued.
+Festivals kill phones: dense crowds + overloaded or absent cell towers mean every "find my friends" app is dead on arrival. Paid offline trackers are expensive, subscription-gated, or discontinued.
 
-GPS itself still works offline — it's receive-only from satellites, so every device *knows where it is*. The missing piece is **sharing positions between devices with no internet**. That's what this project builds.
+GPS itself works with zero cell signal — it's receive-only from satellites, so every device *knows where it is*. The missing piece is **sharing a position between devices with no internet**. rave-compass does that with a one-way LoRa broadcast: the anchor yells "here I am" every second; the tokens listen and point.
 
-## Physics (why the obvious options fail)
+## How it works
+
+- **1 anchor** — broadcasts its GPS position over raw LoRa (915 MHz) every second.
+- **N tokens** — receive-only. Each knows its own GPS position + tilt-compensated compass heading → lights an LED-ring arrow toward the anchor, with distance. Lost? Follow the arrow. Crew converges.
+
+No mesh, no pairing, no accounts, no cloud, no phone required. Tokens never transmit, so any number of friends can listen.
+
+Full architecture, diagrams, BOM and build phases: **[PLAN.md](PLAN.md)**.
+
+## Why this design
 
 | Channel | Range in a packed crowd | Verdict |
 |---|---|---|
-| BLE / WiFi-Direct | ~5–15m — human bodies absorb 2.4GHz | useless at festival scale |
+| BLE / WiFi / 2.4 GHz | ~5–15 m — human bodies heavily attenuate 2.4 GHz | useless at festival scale (the commercial Totem Compass uses 2.4 GHz and its users report exactly this failure once the crew spreads out) |
 | Cell / internet | assumes a working tower | the whole problem |
-| **LoRa (915MHz AU ISM)** | **hundreds of m to km, off-grid** | **the viable radio** |
+| **LoRa 915 MHz** | **hundreds of metres through crowds** | **the viable radio** |
 
-[Meshtastic](https://meshtastic.org) — open-source LoRa mesh firmware — already solves position broadcast, meshing, and congestion. Likely the radio layer regardless of which hardware path wins.
+One-way single-transmitter design means no mesh congestion, near-live 1 s updates (a mesh protocol like Meshtastic floors out at 30 s), and tokens that run 7+ hours on a small internal battery — no powerbanks.
 
 ## Requirements
 
-1. **Zero-signal operation** — self-contained LoRa mesh between units.
-2. **One device per friend** (4–6 units), target ~$30–80 AUD per unit.
-3. **Compass UX, not a map** — bearing arrow (GPS delta + magnetometer heading) + distance to each friend.
-4. **Must not look like a bomb.** Clean consumer-grade enclosure — no exposed PCBs, loose wires, or taped-on batteries. Has to sail through festival security bag checks.
-5. **12h+ battery** — a full rave day/night.
-6. **AU-legal** — 915MHz ISM band (AU915).
+1. **Zero-signal operation** — self-contained one-way LoRa broadcast, no venue infrastructure.
+2. **1 anchor + a token per friend**, target ~$60–80 AUD per token.
+3. **Compass UX** — LED-ring arrow + distance to the anchor; "basically here" mode under ~30 m (GPS accuracy floor).
+4. **Must not look like a bomb.** Fully enclosed consumer-grade cases — no exposed PCBs, wires, or taped batteries. Sails through festival bag checks.
+5. **7 h battery on the internal cell** — one night rave, no powerbanks.
+6. **AU-legal** — 915–928 MHz under the ACMA LIPD class licence (licence-free; verified no duty-cycle limit in AU).
 
-## Candidate architectures
+## Research
 
-| Path | Shape | Trade-off |
-|---|---|---|
-| **A. Finished tracker + phone app** | Seeed T1000-E (card-size, IP65, stock Meshtastic, ~$60) per friend; custom compass app over BLE | Least hardware work, most consumer-looking; UI lives on phone |
-| **B. Handheld with own display** | T-Echo (e-ink, cased) or T-Beam/Heltec + round LCD (GC9A01) + magnetometer (QMC5883L) in 3D-printed case | Real gadget feel, arrow on-device, no phone needed; enclosure work required |
-| **C. Full custom** | ESP32 + LoRa + GPS + LED ring, custom firmware + case | Max fun, max effort, highest bomb-lookalike risk if the case is lazy |
+All in [docs/](docs/):
 
-## Research findings (Sept 2026)
+- [research-2026-09.md](docs/research-2026-09.md) — hardware landscape, Meshtastic ecosystem, radio physics, DIY prior art
+- [research-totem-competitors.md](docs/research-totem-competitors.md) — FCC teardown of the commercial Totem Compass (ESP32 2.4 GHz — validates our band choice by counterexample), competitor status, more open-source prior art
+- [research-single-beacon.md](docs/research-single-beacon.md) — **the load-bearing engineering doc**: measured power budgets (7 h feasibility), locked radio params (SF8/250 @ 1 Hz), raw-LoRa-vs-Meshtastic call, token hardware shortlist
 
-Full report: [docs/research-2026-09.md](docs/research-2026-09.md). Headlines:
-
-- **Prior art exists**: [Meshtastic Friend Finder Edition](https://github.com/LeapYeet/Meshtastic-Firmware-Friend-Finder-Edition) — firmware fork with pairing, live distance, and a magnetometer arrow to your friend. ESP32-S3 boards only (Heltec V3 validated).
-- **AU-legal**: Meshtastic region ANZ (915–928 MHz), licence-free under ACMA LIPD class licence.
-- **Crowd range**: hundreds of metres (not the marketing "kilometres"), extended by mesh hops via other friends. Fine for a 1–2 km festival site with 4–6 nodes.
-- **Battery**: nRF52 boards (T1000-E, T-Echo) last days; ESP32 boards ~1 day. Beacon interval is the main knob.
-- **GPS reality**: 3–10 m accuracy — arrow must switch to "you're basically here" mode under ~30 m.
-- **Recommended build (Config 2)**: 2–3 Friend Finder pointer units (Heltec V3 + QMC5883L + GPS + printed case, ~$65/unit) + T1000-E card trackers as beacons for the rest of the crew (~$62–85 each). ~AUD $400–450 for 6 people.
-
-## Explicitly not doing
-
-- Subscriptions, accounts, or any cloud dependency at the venue.
-- Phone-only BLE mesh (physics says no).
-- Persisted location trails — live positions only, ephemeral by design.
+Key prior art: [spoke](https://github.com/FeruzTopalov/spoke) (GPS-PPS-synced beacon epochs), [natnafu/beacon](https://github.com/natnafu/beacon) (bearing → LED ring), the LoRa-APRS ecosystem (one-way position beaconing at scale).
 
 ## Roadmap
 
-1. **Research** — competitive landscape + prior DIY art (in progress; report → `docs/`)
-2. **Radio prototype** — 2 boards exchanging positions over LoRa
-3. **Compass prototype** — bearing math + heading on real hardware
-4. **Enclosure pass** — the "doesn't look like a bomb" gate *(mech eng input wanted)*
-5. **Crew build** — 4–6 units, field-test at an actual event
+1. **Protocol spike** — 2 boards, RadioLib, 1 Hz PPS-aligned beacon + scheduled RX windows
+2. **Pointer maths** — tilt-compensated heading + bearing → LED arrow
+3. **Power hardening** — bench-measure, size the battery for 7 h with margin
+4. **Enclosure** — token puck + anchor box on the crew Ender 3 *(mech eng input wanted)*
+5. **Fleet + field test** — 5 tokens + anchor at a real event; publish measured 915 MHz crowd-attenuation data (doesn't exist publicly)
 
 ## Repo layout
 
 ```
 docs/       research, decisions, field-test notes
 hardware/   schematics, BOMs, enclosure CAD
-firmware/   device code (or Meshtastic config + companion app)
+firmware/   beacon + token firmware (one codebase, two roles)
 ```
 
 ## Contributing
 
-Open source (MIT) — the goal is anyone can build one for their own crew. Open an issue or push a branch + PR. Mechanical (enclosure/CAD) and electrical (RF/antenna/power) eyes especially wanted.
+Open source (MIT) — the goal is anyone can build a set for their own crew. Open an issue or push a branch + PR. Mechanical (enclosure/CAD) and electrical (RF/antenna/power) eyes especially wanted. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

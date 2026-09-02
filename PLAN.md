@@ -1,89 +1,154 @@
 # Build plan
 
-Target architecture: **Config 2 from the research** — a hybrid fleet on one private Meshtastic-compatible LoRa mesh (ANZ 915–928 MHz):
+**Locked architecture (2026-09-02): single-beacon homing.** One **anchor** beacon — carried by one person or tied to the crew totem — broadcasts its GPS position over raw LoRa every second. Everyone else carries a small **RX-only pointer token**: GPS + tilt-compensated compass + an LED-ring arrow that always points at the anchor. Lost → follow arrow → crew converges.
 
-- **Pointer units** (2–3): handheld compass gadgets with a real arrow — Heltec V3 + magnetometer + GPS + LiPo in a 3D-printed case, running [Friend Finder Edition](https://github.com/LeapYeet/Meshtastic-Firmware-Friend-Finder-Edition) firmware.
-- **Beacon units** (3–4): Seeed T1000-E card trackers on stock Meshtastic for the rest of the crew — zero build, consumer-finished, phone app as their (optional) display.
+Accepted trade-off: you find the *beacon*, not individuals. That's the product — "get back to the crew".
 
-Upgrade path later: custom round-LCD puck (Config 3) once the mesh + bearing logic is proven; LED-ring beacon SKU as a cheaper DIY alternative to the T1000-E.
+**Firmware base: custom raw-LoRa protocol on [RadioLib](https://github.com/jgromes/RadioLib) — NOT Meshtastic.** Stock Meshtastic can't beacon faster than 30 s; mesh/routing/ACKs are dead weight for one-TX/N-silent-RX. One firmware, two roles (`BEACON` / `TOKEN`). Full rationale + radio params: [docs/research-single-beacon.md](docs/research-single-beacon.md).
 
 ## How it works
 
+### System overview
+
+```mermaid
+flowchart TB
+    SAT(("GPS satellites<br/>receive-only — works with<br/>zero cell signal"))
+    subgraph link["915 MHz raw LoRa one-way broadcast — SF8/250, 1 Hz, PPS-aligned, encrypted payload"]
+        A["ANCHOR beacon<br/>(on a person or the totem)<br/>TX position every 1 s"]
+        T1["Token — RX only<br/>arrow home + distance"]
+        T2["Token — RX only"]
+        T3["Token — RX only"]
+        T4["Token — RX only"]
+        T5["Token — RX only"]
+        A -->|position frame ~57 ms airtime| T1 & T2 & T3 & T4 & T5
+    end
+    SAT -.-> A & T1 & T2 & T3 & T4 & T5
 ```
-        915 MHz LoRa mesh (private channel + PSK)
-   ┌──────────┐   position beacons    ┌──────────┐
-   │ Pointer  │ ◄──────────────────►  │ Beacon   │
-   │ (Heltec) │      every 20-60s     │ (T1000-E)│
-   └────┬─────┘                       └────┬─────┘
-        │                                  │ BLE (optional)
-   on-device arrow                    ┌────▼─────┐
-   + distance                         │ phone app│
-                                      └──────────┘
+
+No mesh, no pairing, no phone. Tokens never transmit — unlimited listeners, zero congestion, and the anchor is the only thing burning TX power.
+
+### Position → arrow pipeline (on a token)
+
+```mermaid
+sequenceDiagram
+    participant A as Anchor (GNSS + PPS)
+    participant R as Token radio (SX1262)
+    participant C as Token MCU (nRF52840)
+    participant U as LED ring
+
+    A->>A: GNSS fix + PPS top-of-second
+    A->>R: TX position frame (1 Hz, SF8/250)
+    Note over R: token opens ~100 ms RX window<br/>each second, radio sleeps otherwise
+    R->>C: anchor lat/long + seq + battery
+    C->>C: own GPS fix
+    C->>C: bearing = atan2(Δlong·cos φ, Δlat)
+    C->>C: heading = tilt-compensated compass<br/>(mag + accelerometer, calibrated)
+    C->>C: arrow = bearing − heading<br/>distance = haversine(Δ)
+    alt distance > 30 m
+        C->>U: light pixel nearest arrow angle,<br/>brightness/colour = distance band
+    else distance ≤ 30 m (GPS accuracy floor)
+        C->>U: all-pixels pulse — "basically here, look up"
+    end
+    Note over C,U: no frame for >10 s → stale mode<br/>(slow blink last-known) — never shown as live
 ```
 
-1. **Position sensing**: every unit has GNSS — works with zero cell signal (GPS is receive-only).
-2. **Position sharing**: units broadcast lat/long over LoRa on a private channel (own PSK, non-default frequency slot in case the festival has a public mesh). Mesh-hops via other crew members extend range.
-3. **Bearing**: pointer unit computes bearing = atan2(Δlong, Δlat) from its GPS to the friend's last position, subtracts its own magnetometer heading (QMC5883L, figure-8 calibrated), rotates the arrow. Under ~30 m it switches to a "you're basically there" proximity mode (GPS accuracy floor).
-4. **Distance**: haversine from GPS delta, shown next to the arrow.
-5. **Staleness**: last-heard age shown per friend; stale positions greyed out, never silently trusted.
+1. **Position sensing**: anchor and tokens each have GNSS — works with zero cell signal (GPS is receive-only; degraded under solid roofs/stages).
+2. **Position sharing**: one-way — the anchor broadcasts, tokens listen. Private encrypted payload, channel offset from the Meshtastic AU default so a festival full of trackers doesn't collide with us.
+3. **Bearing**: `atan2(Δlong·cos φ, Δlat)` (the `cos φ` latitude scaling matters — ~6° systematic error at Sydney without it), minus tilt-compensated heading from mag + accelerometer. Bare magnetometer heading is wrong unless held level — tilt compensation is required, not optional.
+4. **Distance**: haversine (overkill under 1 km but cheap).
+5. **Staleness**: last-heard age tracked; stale positions shown as stale, never as live.
 
-## Bill of materials (6-person crew, AUD approx.)
+## Bill of materials (1 anchor + 5 tokens, AUD approx.)
 
-### Pointer unit ×3 (~$65 each)
+### Token ×5 (~$80 each, budget path ~$60)
 
 | Part | Cost | Notes |
 |---|---|---|
-| Heltec WiFi LoRa 32 V3 (915 MHz) | ~$35 | validated Friend Finder board |
-| GY-271 QMC5883L magnetometer | ~$4 | mount away from battery/speaker |
-| ATGM336H or NEO-6M GPS module | ~$12 | |
-| 1,500 mAh LiPo | ~$12 | ~1 day; power bank top-up at camp |
-| 3D-printed case (muzi.works H1-style) | ~$2 | in-house Ender 3, PETG |
+| Seeed Wio Tracker L1 Lite | $57.30 | nRF52840 + SX1262 + L76K GPS on one board ([Core Electronics](https://core-electronics.com.au/seeed-wio-tracker-l1-lite-for-meshtastic.html), local stock) |
+| Mag + accelerometer module | ~$6 | tilt-compensated heading; mount away from battery |
+| 8-px SK6805 LED ring | ~$4 | MOSFET-gated, dim; the arrow |
+| 500 mAh LiPo | ~$8 | 7 h comfortable on nRF52 (research §1) — no powerbank |
+| Button + misc | ~$3 | wake/brightness |
+| 3D-printed case | ~$2 | in-house Ender 3, PETG |
 
-### Beacon unit ×3 (~$62–85 each)
+Budget alt: XIAO nRF52840 + Wio-SX1262 module + L76K ≈ $35 in boards → ~$60/token, more soldering.
+
+### Anchor ×1 (~$75)
 
 | Part | Cost | Notes |
 |---|---|---|
-| Seeed T1000-E (AU915) | $62 direct / $85 local | pre-flashed Meshtastic, IP65, card-sized |
+| Seeed Wio Tracker L1 Lite | $57.30 | same board, `BEACON` role |
+| 1,000–2,000 mAh LiPo | ~$12 | 7 h needs ~350–450 mAh — huge margin, no powerbank |
+| Case + stub antenna | ~$5 | belt-clip + totem zip-tie channels |
 
-**Fleet total: ~AUD $400–450.**
+**Fleet total (1 + 5): ~AUD $475** (or ~$375 via the XIAO path).
 
-## Build phases
+## Build diagrams
 
-### Phase 1 — Radio proof (order → 1 weekend)
-- Order 2 × Heltec V3 + modules + 1 × T1000-E (validate interop early).
-- Flash Friend Finder via web flasher; set region ANZ, private channel + PSK.
-- Two units exchanging positions on a desk, then a suburb walk-test: range, update latency, staleness behaviour.
-- **Gate: stock-firmware T1000-E positions visible from a Friend Finder pointer.** If not, decide: all-pointer fleet vs firmware patch vs phone-app display for beacons.
+### Token — hardware assembly
 
-### Phase 2 — Compass proof
-- Wire QMC5883L + GPS to one pointer; figure-8 + flat-spin calibrate.
-- Park test: two people, arrow accuracy while walking, close-range (<30 m) behaviour, magnetometer interference (phone in same pocket).
-- Battery drain measurement at 20 s vs 60 s beacon interval.
+```mermaid
+flowchart LR
+    subgraph case["3D-printed token case (Ender 3, PETG) — ~50 mm puck, lanyard hole, fully enclosed"]
+        subgraph board["Wio Tracker L1 Lite"]
+            MCU["nRF52840 MCU<br/>custom RadioLib firmware"]
+            LORA["SX1262 LoRa<br/>(915 MHz ANZ, RX-only role)"]
+            GPS["L76K GNSS<br/>(onboard, patch antenna up)"]
+        end
+        IMU["mag + accelerometer<br/>(tilt-compensated heading,<br/>mounted away from battery)"]
+        RING["8-px LED ring under<br/>diffuser face (MOSFET-gated)"]
+        BAT["500 mAh LiPo"]
+        BTN["button"]
+    end
+    USB["USB-C (edge, charging)"]
 
-### Phase 3 — Enclosure (mech eng + Ender 3)
-- Print/adapt H1-style case; route GPS + magnetometer inside the shell, stub antenna, no visible wires.
-- The "doesn't look like a bomb" gate: fully enclosed, branded label + QR code, reads as a commercial GPS gadget.
-- PETG for heat; antenna port snug; USB-C accessible for charging.
+    IMU -->|I2C| MCU
+    MCU -->|GPIO| RING
+    BTN --> MCU
+    BAT -->|JST| MCU
+    USB --- MCU
+```
 
-### Phase 4 — Fleet build + field test
-- Build remaining pointer units, buy remaining T1000-Es, bond/configure everything on the private channel.
-- Full-crew park/park-run rehearsal, then a real event.
-- Log: real crowd range, mesh-hop behaviour, battery over a full day, arrow usability in the dark.
+Anchor = same board in a bigger box (belt-clip/zip-tie mount, larger LiPo, stub antenna, recessed power switch). GPS patch antenna faces the sky in both — tokens hang face-up on a lanyard.
 
-### Phase 5 (stretch) — custom puck / LED-ring SKU
-- Round GC9A01 LCD puck (crib LodeStone + Micro Compass) and/or LED-ring beacon (Totem-style UX, no screen).
-- Crib spoke's PPS-synced TDMA + 13-byte payloads if stock Meshtastic intervals feel too stale.
-- Touch-to-bond pairing UX instead of channel config.
+### Build phases + gates
 
-## Design principles
+```mermaid
+flowchart TD
+    P1["Phase 1 — Protocol spike<br/>2x Wio Tracker L1 Lite, RadioLib<br/>1 Hz PPS-aligned beacon + RX windows<br/>lock payload + SF8/250"]
+    G1{"GATE: solid 1 Hz RX at<br/>suburb walk-test ranges?"}
+    F1["Fallback: SF9/250<br/>(still legal AU, 10% duty)"]
+    P2["Phase 2 — Pointer maths + UX<br/>tilt-compensated heading, bearing w/ cos-lat,<br/>LED-ring arrow, proximity + stale modes"]
+    G2{"GATE: arrow correct while<br/>walking, tilted, near battery?"}
+    P3["Phase 3 — Power hardening<br/>bench-measure ring idle, GPS draw,<br/>duty-RX; pick 500 vs 1000 mAh"]
+    G3{"GATE: 7 h on internal cell<br/>with margin?"}
+    P4["Phase 4 — Enclosure<br/>token puck + anchor box on Ender 3<br/>GATE: passes the bag-check look test"]
+    P5["Phase 5 — Fleet + field test<br/>5 tokens + anchor, park rehearsal,<br/>then real crowd — measure 915 MHz<br/>body attenuation (novel data!)"]
 
-- **LoRa or nothing** — 2.4 GHz dies in crowds (Totem's own users confirm: falls over when the crew spreads out).
-- **Ephemeral by design** — live positions only, private PSK, no cloud, no accounts, no trails.
-- **Degrade loudly** — stale data is shown as stale, never presented as current.
-- **Consumer-finished or it doesn't ship** — every unit passes a bag check.
+    P1 --> G1
+    G1 -->|yes| P2
+    G1 -->|no| F1 --> P2
+    P2 --> G2 --> P3 --> G3 --> P4 --> P5
+```
+
+### Phase detail
+
+1. **Protocol spike** — order 2× Wio Tracker L1 Lite (+ optionally 1 Heltec Wireless Tracker as a debug unit with a screen). Raw RadioLib beacon + scheduled RX windows, PPS-aligned. Lock the payload struct (~16–24 B). Cribs: [spoke](https://github.com/FeruzTopalov/spoke)'s PPS epochs, [natnafu/beacon](https://github.com/natnafu/beacon)'s payload + bearing→ring logic.
+2. **Pointer maths + UX** — mag+accel tilt-compensated heading with figure-8 + LED-feedback calibration; bearing with `cos φ`; ring arrow; proximity (<30 m) and stale (>10 s) modes.
+3. **Power hardening** — bench the open flags (ring quiescent draw, GPS real current, duty-RX average); battery size from measurements, not datasheets.
+4. **Enclosure** — token puck (~50 mm, lanyard hole, diffuser face) + anchor box. Bag-check gate: fully enclosed, brand label, stub antenna, zero visible wires.
+5. **Fleet + field** — build 5 tokens, park rehearsal, then a real event. Log range/battery/arrow accuracy to `docs/field-tests/`. Measured 915 MHz crowd body-attenuation doesn't exist publicly — capture and publish it.
+6. **Stretch — "become the anchor" promotion mode.** Every unit runs the same firmware, so the anchor role is a runtime flag, not hardware. If the anchor dies (battery/lost/confiscated), any token promotes itself via a deliberate long-press sequence (e.g. hold button 10 s + confirm pattern on the ring — hard to trigger by accident in a pocket) and starts beaconing; the crew re-homes on it. Design notes: promoted anchor uses a new epoch/id so tokens don't mix stale coords; guard against two simultaneous promotions (listen-before-promote: refuse if a live anchor is heard); battery caveat — a promoted 500 mAh token beaconing + GPS runs hotter, fine for the tail of a night, not a fresh 7 h. Degrade loudly: ring shows "I am the anchor now" state.
+
+## Design principles (canonical — CLAUDE.md refers here)
+
+1. **LoRa or nothing** — 2.4 GHz dies in crowds (bodies attenuate it hard; Totem's users confirm the failure mode).
+2. **Ephemeral by design** — live positions only, encrypted payload, no cloud, no accounts, no trails.
+3. **Degrade loudly** — stale data is shown as stale, never presented as current.
+4. **Consumer-finished or it doesn't ship** — every unit passes a bag check.
 
 ## Current State
 
-- Phase: research complete (2 reports in docs/), plan drafted
-- Next: order Phase 1 hardware (2× Heltec V3 + modules + 1× T1000-E)
+- Phase: architecture locked (single-beacon homing); research ×3 + adversarial review done; docs rewritten
+- Next: order Phase 1 hardware — 2× Wio Tracker L1 Lite (Core Electronics)
 - Blocked: nothing

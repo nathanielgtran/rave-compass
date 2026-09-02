@@ -1,9 +1,7 @@
-# build artifacts
+# build artifacts (release firmware images ARE committed under firmware/releases/)
 build/
 dist/
-*.bin
 *.elf
-*.hex
 
 # environments / secrets
 .env
