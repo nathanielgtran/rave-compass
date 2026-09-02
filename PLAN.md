@@ -134,7 +134,7 @@ flowchart TD
 ### Phase detail
 
 1. **Protocol spike** — order 2× Wio Tracker L1 Lite (+ optionally 1 Heltec Wireless Tracker as a debug unit with a screen). Raw RadioLib beacon + scheduled RX windows, PPS-aligned. Lock the payload struct (~16–24 B). Cribs: [spoke](https://github.com/FeruzTopalov/spoke)'s PPS epochs, [natnafu/beacon](https://github.com/natnafu/beacon)'s payload + bearing→ring logic.
-2. **Pointer maths + UX** — mag+accel tilt-compensated heading with figure-8 + LED-feedback calibration; bearing with `cos φ`; ring arrow; proximity (<30 m) and stale (>10 s) modes.
+2. **Pointer maths + UX** — mag+accel tilt-compensated heading with figure-8 + LED-feedback calibration; bearing with `cos φ`; ring arrow; proximity (≤30 m) and stale (>10 s) modes.
 3. **Power hardening** — bench the open flags (ring quiescent draw, GPS real current, duty-RX average); battery size from measurements, not datasheets.
 4. **Enclosure** — token puck (~50 mm, lanyard hole, diffuser face) + anchor box. Bag-check gate: fully enclosed, brand label, stub antenna, zero visible wires.
 5. **Fleet + field** — build 5 tokens, park rehearsal, then a real event. Log range/battery/arrow accuracy to `docs/field-tests/`. Measured 915 MHz crowd body-attenuation doesn't exist publicly — capture and publish it.
@@ -149,6 +149,6 @@ flowchart TD
 
 ## Current State
 
-- Phase: architecture locked (single-beacon homing); research ×3 + adversarial review done; docs rewritten
-- Next: order Phase 1 hardware — 2× Wio Tracker L1 Lite (Core Electronics)
-- Blocked: nothing
+- Phase: Phase 1 pre-hardware (firmware scaffold + tested maths) — ravecore lib + 38 unit tests green, protocol spec v0, hardware requirements doc committed
+- Next: flash dev pair on arrival (2× Wio Tracker L1 Lite) — Phase 1 protocol spike
+- Blocked: hardware in post
