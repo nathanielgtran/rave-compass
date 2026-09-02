@@ -10,6 +10,7 @@
 
 #include <unity.h>
 #include <cmath>
+#include <cstring>
 
 #include "../../lib/ravecore/geo.h"
 #include "../../lib/ravecore/heading.h"
@@ -82,12 +83,10 @@ void test_bearing_antimeridian(void) {
 // ---------------------------------------------------------------------------
 
 void test_haversine_lat_step(void) {
-    // 0.01 deg latitude ~= 1111.95 m (1 deg lat ~= 111,195 m on WGS84).
-    // At Sydney the meridian is nearly constant, so this is very close.
+    // 0.01 deg latitude = 1111.95 m with R = 6371000 (spherical model).
     double d = haversineMeters(-33.87, 151.20, -33.86, 151.20);
-    // Allow 1 m tolerance.
-    TEST_ASSERT_TRUE_MESSAGE(std::fabs(d - 1113.0) < 2.0,
-        "0.01 deg lat at Sydney should be ~1113 m (within 2 m)");
+    TEST_ASSERT_TRUE_MESSAGE(std::fabs(d - 1111.95) < 1.0,
+        "0.01 deg lat should be ~1111.95 m (within 1 m)");
 }
 
 void test_haversine_zero(void) {
@@ -196,6 +195,14 @@ void test_heading_flat_west(void) {
     assertNearDeg(270.0, h, 1.0, "flat, my=+1 -> heading 270 (west)");
 }
 
+void test_heading_near_zero_accel_guarded(void) {
+    // Freefall / bad sensor read: accel magnitude ~0 must hit the guard and
+    // return 0.0, never NaN or a division blowup.
+    double h = tiltCompensatedHeadingDeg(1.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f);
+    TEST_ASSERT_TRUE_MESSAGE(h == 0.0, "near-zero accel must return 0.0 (guard)");
+    TEST_ASSERT_FALSE_MESSAGE(std::isnan(h), "near-zero accel must not produce NaN");
+}
+
 void test_heading_tilted_30deg_pitch_still_north(void) {
     // Construct a "true north" mag field in the world frame: mWorld = (1, 0, 0).
     // Tilt the device 30 deg nose-up (pitch = +30 deg, ax positive in NED).
@@ -293,6 +300,17 @@ void test_protocol_short_buffer_rejected(void) {
     PositionFrame f2{};
     bool ok = unpack(buf, FRAME_LEN - 1, f2);
     TEST_ASSERT_FALSE_MESSAGE(ok, "short buffer should cause unpack to return false");
+}
+
+void test_protocol_all_ff_buffer_rejected(void) {
+    // Plausible OTA garbage: a buffer of all 0xFF. CRC8(12 x 0xFF) = 0x71,
+    // which does not equal the 0xFF in the CRC slot, so unpack must reject.
+    uint8_t buf[FRAME_LEN];
+    std::memset(buf, 0xFF, sizeof(buf));
+
+    PositionFrame f{};
+    bool ok = unpack(buf, FRAME_LEN, f);
+    TEST_ASSERT_FALSE_MESSAGE(ok, "all-0xFF buffer must fail CRC and be rejected");
 }
 
 void test_protocol_lat_e7_exact(void) {
@@ -429,6 +447,9 @@ int main(void) {
     RUN_TEST(test_protocol_corrupt_byte_rejected);
     RUN_TEST(test_protocol_short_buffer_rejected);
     RUN_TEST(test_protocol_lat_e7_exact);
+    RUN_TEST(test_protocol_all_ff_buffer_rejected);
+
+    RUN_TEST(test_heading_near_zero_accel_guarded);
 
     // state machine
     RUN_TEST(test_state_live_arrow);

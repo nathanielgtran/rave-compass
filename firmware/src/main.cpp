@@ -74,7 +74,7 @@ void loop() {
     // 4. Compute display mode (state::computeMode):
     //       NO_FIX     — no own GPS fix OR never heard anchor
     //       STALE      — last frame > 10 s ago
-    //       PROXIMITY  — distance < 30 m (GPS accuracy floor — "look up")
+    //       PROXIMITY  — distance <= 30 m (GPS accuracy floor — "look up")
     //       LIVE_ARROW — normal operation
 
     // 5. Compute bearing + heading:

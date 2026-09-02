@@ -22,7 +22,7 @@
  *   Coding rate: 4/5
  *   TX power   : +22 dBm
  *   Rate       : 1 Hz (PPS-aligned anchor TX)
- *   Airtime    : ~57 ms (24 B payload, explicit header, CRC)
+ *   Airtime    : ~57 ms (13 B payload, explicit header, CRC)
  *   Preamble   : 16-24 symbols (TODO: bench minimum for reliable 100 ms window)
  *
  * Security note (PROMINENT):

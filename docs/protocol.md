@@ -10,8 +10,8 @@ Total: 13 bytes, little-endian.
 | Offset | Field    | Type    | Size (B) | Description                                              |
 |--------|----------|---------|----------|----------------------------------------------------------|
 | 0      | id       | uint8   | 1        | Device identifier set at flash time (anchor only; 0 = unset) |
-| 1      | latE7    | int32   | 4        | Latitude × 1e-7 degrees, signed little-endian (e.g. Sydney -33.8688° → -338688000) |
-| 5      | lonE7    | int32   | 4        | Longitude × 1e-7 degrees, signed little-endian           |
+| 1      | latE7    | int32   | 4        | Latitude, degrees × 1e7 (decode: value / 1e7), signed little-endian (e.g. Sydney -33.8688° → -338688000) |
+| 5      | lonE7    | int32   | 4        | Longitude, degrees × 1e7 (decode: value / 1e7), signed little-endian           |
 | 9      | seq      | uint16  | 2        | Rolling sequence counter, little-endian; wraps at 65535  |
 | 11     | battPct  | uint8   | 1        | Battery percentage [0, 100]                              |
 | 12     | crc      | uint8   | 1        | CRC8 checksum over bytes 0–11                            |
@@ -19,8 +19,8 @@ Total: 13 bytes, little-endian.
 ### latE7 / lonE7 encoding example
 
 ```
--33.8688 deg  x  1e7  =  -338688000  (int32, little-endian bytes: 40 26 B5 EB)
-151.208  deg  x  1e7  =  1512080000  (int32, little-endian bytes: 80 56 E5 5A)
+-33.8688 deg  x  1e7  =  -338688000  (int32, little-endian bytes: 00 08 D0 EB)
+151.208  deg  x  1e7  =  1512080000  (int32, little-endian bytes: 80 82 20 5A)
 ```
 
 ## CRC8 specification
