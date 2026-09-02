@@ -149,6 +149,6 @@ flowchart TD
 
 ## Current State
 
-- Phase: architecture locked (single-beacon homing); research ×3 + adversarial review done; docs rewritten
-- Next: order Phase 1 hardware — 2× Wio Tracker L1 Lite (Core Electronics)
-- Blocked: nothing
+- Phase: Phase 1 pre-hardware (firmware scaffold + tested maths) — ravecore lib + 38 unit tests green, protocol spec v0, hardware requirements doc committed
+- Next: flash dev pair on arrival (2× Wio Tracker L1 Lite) — Phase 1 protocol spike
+- Blocked: hardware in post
