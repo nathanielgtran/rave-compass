@@ -35,14 +35,16 @@ GPS itself still works offline — it's receive-only from satellites, so every d
 | **B. Handheld with own display** | T-Echo (e-ink, cased) or T-Beam/Heltec + round LCD (GC9A01) + magnetometer (QMC5883L) in 3D-printed case | Real gadget feel, arrow on-device, no phone needed; enclosure work required |
 | **C. Full custom** | ESP32 + LoRa + GPS + LED ring, custom firmware + case | Max fun, max effort, highest bomb-lookalike risk if the case is lazy |
 
-## Open questions
+## Research findings (Sept 2026)
 
-- Meshtastic API surface: cleanest way to get friend positions into custom UI (serial / BLE / on-device plugin)?
-- Real LoRa range in dense festival crowds (field reports, not marketing).
-- Position-broadcast interval vs battery vs mesh congestion at 4–6 nodes.
-- Magnetometer tilt-compensation (handhelds aren't level) — sensor fusion needed?
-- Best cased-by-default boards in 2026 + AU pricing/suppliers.
-- Enclosure design: 3D-print vs off-the-shelf case mods.
+Full report: [docs/research-2026-09.md](docs/research-2026-09.md). Headlines:
+
+- **Prior art exists**: [Meshtastic Friend Finder Edition](https://github.com/LeapYeet/Meshtastic-Firmware-Friend-Finder-Edition) — firmware fork with pairing, live distance, and a magnetometer arrow to your friend. ESP32-S3 boards only (Heltec V3 validated).
+- **AU-legal**: Meshtastic region ANZ (915–928 MHz), licence-free under ACMA LIPD class licence.
+- **Crowd range**: hundreds of metres (not the marketing "kilometres"), extended by mesh hops via other friends. Fine for a 1–2 km festival site with 4–6 nodes.
+- **Battery**: nRF52 boards (T1000-E, T-Echo) last days; ESP32 boards ~1 day. Beacon interval is the main knob.
+- **GPS reality**: 3–10 m accuracy — arrow must switch to "you're basically here" mode under ~30 m.
+- **Recommended build (Config 2)**: 2–3 Friend Finder pointer units (Heltec V3 + QMC5883L + GPS + printed case, ~$65/unit) + T1000-E card trackers as beacons for the rest of the crew (~$62–85 each). ~AUD $400–450 for 6 people.
 
 ## Explicitly not doing
 
