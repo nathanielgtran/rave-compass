@@ -4,14 +4,16 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
+permissions: {}
+
 jobs:
   claude-review:
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: write
-    uses: nathanielgtran/do-no-work/.github/workflows/claude-review.yml@083422e109916dcd8026721489411ae1e8583a55 # do-no-work 083422e
+    uses: nathanielgtran/do-no-work/.github/workflows/claude-review.yml@6860710701790464e028948f807dc627a7a68d03 # do-no-work 6860710
     with:
-      tools-ref: 083422e109916dcd8026721489411ae1e8583a55
+      tools-ref: 6860710701790464e028948f807dc627a7a68d03
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
