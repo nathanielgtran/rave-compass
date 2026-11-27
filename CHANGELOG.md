@@ -1,5 +1,6 @@
 # Changelog
 
+- chore-9: PR body template check: `.github/workflows/pr-template.yml` calls the fleet reusable workflow in `nathanielgtran/.github` (pinned SHA) and fails PRs whose body leaves What, Why, Proof or Risk + rollback missing or empty. Bot PRs are skipped.
 - docs-8: editorial diagrams via diagram-design — PLAN.md Mermaid blocks (system overview, position→arrow sequence, token assembly, build phases) and the docs/protocol.md ASCII timing sketch redrawn as light/dark SVG (`<picture>`) in docs/diagrams/ with HTML sources + `.diagram-design` profile; content unchanged (all already single-beacon)
 - ci-2: fix native-tests workflow — drop setup-python pip cache (hard-fails when repo has no requirements.txt; workflow was red since ci-1)
 - feat-2: ravecore v1 — AES-128-CTR payload encryption (frame v1 via version bits in top 2 bits of id byte), streaming magnetometer hard-iron calibration (min/max figure-8 fit), circular bearing EMA + pixel hysteresis anti-flap; embedded l1lite_token + l1lite_beacon compile clean (board sub: adafruit_feather_nrf52840, same nRF52840 MCU — swap to Seeed BSP on hardware arrival); 49 tests green (was 40)

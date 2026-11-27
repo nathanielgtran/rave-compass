@@ -1,0 +1,18 @@
+name: PR template
+
+# Fails a PR whose body skips the fleet template (What / Why / Proof /
+# Risk + rollback). Source: nathanielgtran/.github; bump both SHAs together.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-template:
+    uses: nathanielgtran/.github/.github/workflows/pr-template-check.yml@97aa0cf4a18b815816c037ba73e7a8f7ddb3b506
+    with:
+      ref: 97aa0cf4a18b815816c037ba73e7a8f7ddb3b506
+      runs_on: '"ubuntu-latest"'
