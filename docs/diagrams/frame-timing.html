@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anchor and token timing within one second</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #F7F5F2;
+      --color-ink:     #2C2C2A;
+      --color-muted:   #5C5650;
+      --color-accent:  #A8482D;
+      --font-sans:     system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --font-serif:    'Iowan Old Style', Georgia, 'Times New Roman', serif;
+      --font-mono:     ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 960px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Timing · rave-compass</p>
+    <h1>Anchor and token timing within one second</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 960 448" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="frame-timing-title frame-timing-desc">
+        <title id="frame-timing-title">Anchor and token timing within one second</title>
+        <desc id="frame-timing-desc">Timing of one second: the anchor packs and transmits a position frame at the PPS edge while the token opens a short receive window around it, then decodes and displays before sleeping.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5C5650"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#A8482D"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3B4F5E"/></marker>
+          <marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#3B4F5E" stroke-width="1.2"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#F7F5F2"/>
+
+        <line x1="200" y1="96" x2="200" y2="296" stroke="rgba(44,44,42,0.28)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="200" y="84" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.14em">PPS</text>
+        <line x1="880" y1="96" x2="880" y2="296" stroke="rgba(44,44,42,0.28)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="880" y="84" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.14em">NEXT PPS</text>
+        <text x="56" y="132" fill="#2C2C2A" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-weight="600" letter-spacing="0.14em">ANCHOR</text>
+        <text x="56" y="146" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace">GNSS + SX1262</text>
+        <text x="56" y="244" fill="#2C2C2A" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-weight="600" letter-spacing="0.14em">TOKEN</text>
+        <text x="56" y="258" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace">SX1262 + nRF52840</text>
+        <rect x="200" y="112" width="72" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="200" y="112" width="72" height="56" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="236" y="138" fill="#2C2C2A" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Pack</text>
+        <text x="236" y="154" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">&lt; 1 ms</text>
+        <rect x="276" y="112" width="164" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="276" y="112" width="164" height="56" rx="6" fill="rgba(168,72,45,0.08)" stroke="#A8482D" stroke-width="1"/>
+        <text x="358" y="138" fill="#2C2C2A" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">TX</text>
+        <text x="358" y="154" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">~57 ms</text>
+        <rect x="444" y="112" width="436" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="444" y="112" width="436" height="56" rx="6" fill="rgba(44,44,42,0.02)" stroke="rgba(44,44,42,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="662" y="145" fill="#5C5650" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="400">radio sleep</text>
+        <rect x="200" y="224" width="40" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="200" y="224" width="40" height="56" rx="6" fill="rgba(44,44,42,0.02)" stroke="rgba(44,44,42,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="220" y="257" fill="#5C5650" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="400">sleep</text>
+        <rect x="244" y="224" width="216" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="244" y="224" width="216" height="56" rx="6" fill="rgba(44,44,42,0.05)" stroke="#3B4F5E" stroke-width="1"/>
+        <text x="352" y="250" fill="#2C2C2A" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">RX window</text>
+        <text x="352" y="266" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">~100 ms</text>
+        <rect x="464" y="224" width="112" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="464" y="224" width="112" height="56" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="520" y="250" fill="#2C2C2A" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Decode</text>
+        <text x="520" y="266" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">+ display</text>
+        <rect x="580" y="224" width="300" height="56" rx="6" fill="#F7F5F2"/>
+        <rect x="580" y="224" width="300" height="56" rx="6" fill="rgba(44,44,42,0.02)" stroke="rgba(44,44,42,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="730" y="257" fill="#5C5650" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="400">radio sleep</text>
+        <text x="56" y="336" fill="#2C2C2A" font-size="14" font-family="'Iowan Old Style', Georgia, 'Times New Roman', serif" font-style="italic">Schematic, not to scale. A 16–24 symbol preamble lets the token lock even if its window opens slightly early.</text>
+        <line x1="56" y1="376" x2="904" y2="376" stroke="rgba(44,44,42,0.1)" stroke-width="0.8"/>
+        <text x="56" y="392" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="56" y="412" width="14" height="10" rx="2" fill="rgba(168,72,45,0.08)" stroke="#A8482D" stroke-width="1"/>
+        <text x="76" y="421" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Anchor transmit</text>
+        <rect x="204" y="412" width="14" height="10" rx="2" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="224" y="421" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Compute / display</text>
+        <line x1="356" y1="417" x2="384" y2="417" stroke="#3B4F5E" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="392" y="421" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Receive window</text>
+
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
