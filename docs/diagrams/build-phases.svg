@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 684" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="build-phases-title build-phases-desc" id="build-phases-root">
+        <title id="build-phases-title">Build phases and gates</title>
+        <desc id="build-phases-desc">Five build phases from protocol spike to field test, with three pass or fail gates and an SF9/250 fallback if suburb walk-test range fails.</desc>
+        <defs>
+      <style>#build-phases-root { --color-paper:   #F7F5F2;
+      --color-ink:     #2C2C2A;
+      --color-muted:   #5C5650;
+      --color-accent:  #A8482D;
+      --font-sans:     system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --font-serif:    'Iowan Old Style', Georgia, 'Times New Roman', serif;
+      --font-mono:     ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+      #build-phases-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #build-phases-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#build-phases-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="build-phases-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5C5650"/></marker>
+          <marker id="build-phases-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#A8482D"/></marker>
+          <marker id="build-phases-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3B4F5E"/></marker>
+          <marker id="build-phases-arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#3B4F5E" stroke-width="1.2"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#F7F5F2"/>
+
+        <line x1="256" y1="256" x2="340" y2="256" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="460" y1="256" x2="544" y2="256" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="400" y1="216" x2="400" y2="112" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <path d="M496,80 H632 Q640,80 640,88 V204" fill="none" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="736" y1="256" x2="820" y2="256" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="940" y1="256" x2="1024" y2="256" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="1120" y1="308" x2="1120" y2="440" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="1060" y1="480" x2="976" y2="480" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <line x1="784" y1="480" x2="736" y2="480" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <rect x="488" y="238" width="28" height="12" rx="2" fill="#F7F5F2"/>
+        <text x="502" y="247" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">YES</text>
+        <rect x="408" y="156" width="28" height="12" rx="2" fill="#F7F5F2"/>
+        <text x="422" y="165" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">NO</text>
+        <rect x="966" y="238" width="32" height="12" rx="2" fill="#F7F5F2"/>
+        <text x="982" y="247" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PASS</text>
+        <rect x="1002" y="462" width="32" height="12" rx="2" fill="#F7F5F2"/>
+        <text x="1018" y="471" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PASS</text>
+        <rect x="304" y="48" width="192" height="64" rx="6" fill="#F7F5F2"/>
+        <rect x="304" y="48" width="192" height="64" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="312" y="56" width="52" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="338" y="65" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">FALLBACK</text>
+        <text x="400" y="84" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">SF9/250</text>
+        <text x="400" y="99" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">still legal in AU, 10% duty</text>
+        <rect x="64" y="204" width="192" height="104" rx="6" fill="#F7F5F2"/>
+        <rect x="64" y="204" width="192" height="104" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="72" y="212" width="48" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="96" y="221" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 1</text>
+        <text x="160" y="240" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Protocol spike</text>
+        <text x="160" y="255" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">2 boards, RadioLib</text>
+        <text x="160" y="268" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">1 Hz PPS beacon + RX windows</text>
+        <text x="160" y="281" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">lock payload + SF8/250</text>
+        <rect x="544" y="204" width="192" height="104" rx="6" fill="#F7F5F2"/>
+        <rect x="544" y="204" width="192" height="104" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="552" y="212" width="48" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="576" y="221" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 2</text>
+        <text x="640" y="240" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Pointer maths + UX</text>
+        <text x="640" y="255" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">tilt-comp heading, cos-lat</text>
+        <text x="640" y="268" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">bearing, LED-ring arrow</text>
+        <text x="640" y="281" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">proximity + stale modes</text>
+        <rect x="1024" y="204" width="192" height="104" rx="6" fill="#F7F5F2"/>
+        <rect x="1024" y="204" width="192" height="104" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="1032" y="212" width="48" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="1056" y="221" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 3</text>
+        <text x="1120" y="240" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Power hardening</text>
+        <text x="1120" y="255" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">bench ring idle, GPS draw,</text>
+        <text x="1120" y="268" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">duty-RX; pick 500 vs 1000</text>
+        <text x="1120" y="281" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">mAh from measurements</text>
+        <rect x="784" y="428" width="192" height="104" rx="6" fill="#F7F5F2"/>
+        <rect x="784" y="428" width="192" height="104" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="792" y="436" width="48" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="816" y="445" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 4</text>
+        <text x="880" y="464" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Enclosure</text>
+        <text x="880" y="479" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">token puck + anchor box,</text>
+        <text x="880" y="492" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">printed on an Ender 3</text>
+        <text x="880" y="505" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">gate: passes bag-check look</text>
+        <rect x="544" y="428" width="192" height="104" rx="6" fill="#F7F5F2"/>
+        <rect x="544" y="428" width="192" height="104" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <rect x="552" y="436" width="48" height="12" rx="2" fill="none" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.22"/>
+        <text x="576" y="445" fill="#6E6963" font-size="7" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 5</text>
+        <text x="640" y="464" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Fleet + field test</text>
+        <text x="640" y="479" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">5 tokens + anchor, park</text>
+        <text x="640" y="492" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">rehearsal, then real crowd</text>
+        <text x="640" y="505" fill="#5C5650" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" text-anchor="middle">measure 915 MHz body loss</text>
+        <polygon points="400,216 460,256 400,296 340,256" fill="#F7F5F2"/>
+        <polygon points="400,216 460,256 400,296 340,256" fill="#a8482d" stroke="#A8482D" stroke-width="1" fill-opacity="0.08"/>
+        <text x="400" y="260" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Gate 1</text>
+        <text x="400" y="316" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">Solid 1 Hz RX at suburb</text>
+        <text x="400" y="330" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">walk-test ranges?</text>
+        <polygon points="880,216 940,256 880,296 820,256" fill="#F7F5F2"/>
+        <polygon points="880,216 940,256 880,296 820,256" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="880" y="260" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Gate 2</text>
+        <text x="880" y="316" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">Arrow correct while walking,</text>
+        <text x="880" y="330" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">tilted, near battery?</text>
+        <polygon points="1120,440 1180,480 1120,520 1060,480" fill="#F7F5F2"/>
+        <polygon points="1120,440 1180,480 1120,520 1060,480" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="1120" y="484" fill="#2C2C2A" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-weight="600">Gate 3</text>
+        <text x="1120" y="540" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">7 h on internal cell</text>
+        <text x="1120" y="554" fill="#5C5650" font-size="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" text-anchor="middle">with margin?</text>
+        <line x1="56" y1="612" x2="1224" y2="612" stroke="#2c2c2a" stroke-width="0.8" stroke-opacity="0.1"/>
+        <text x="56" y="628" fill="#5C5650" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" letter-spacing="0.18em">LEGEND</text>
+        <rect x="56" y="648" width="14" height="10" rx="2" fill="#a8482d" stroke="#A8482D" stroke-width="1" fill-opacity="0.08"/>
+        <text x="76" y="657" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Decisive gate</text>
+        <rect x="204" y="648" width="14" height="10" rx="2" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/>
+        <text x="224" y="657" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Phase / gate / fallback</text>
+        <line x1="380" y1="653" x2="408" y2="653" stroke="#5C5650" stroke-width="1.2" marker-end="url(#build-phases-arrow)"/>
+        <text x="416" y="657" fill="#5C5650" font-size="8.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Next step</text>
+
+      </svg>

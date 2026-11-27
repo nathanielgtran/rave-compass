@@ -66,10 +66,10 @@ The anchor synchronises its TX burst to the top of each UTC second using the
 L76K GPS PPS pulse (rising edge). This makes the TX deterministic so tokens
 can duty-cycle their radio.
 
-```
-Anchor:  [--- GNSS fix + seq pack (< 1 ms) ---][TX ~57 ms][ radio sleep ][ next PPS ]
-Token :  [ radio sleep ][ open 100 ms RX window ][ decode + display ][ radio sleep ]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/frame-timing-dark.svg">
+  <img src="diagrams/frame-timing.svg" alt="Timing within one second: anchor packs and transmits at the PPS edge while the token opens a ~100 ms receive window, decodes, then sleeps. Schematic, not to scale.">
+</picture>
 
 - Token opens a ~100 ms RX window each second, aligned to the expected PPS epoch.
 - Radio sleeps otherwise — average RX current drops from ~5 mA (continuous) to

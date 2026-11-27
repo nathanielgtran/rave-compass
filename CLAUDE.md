@@ -47,7 +47,7 @@ Docs are a first-class deliverable — the collaborators (mechanical + electrica
 
 - **Every PR updates the relevant docs in the same PR**: README.md if user-facing behaviour/summary changes, PLAN.md if architecture/BOM/phases change, CHANGELOG.md always (next `type-N` id), docs/ for new research or field-test results.
 - **PLAN.md `## Current State`** (3 lines: phase, next, blocked) must be updated after every work session.
-- **Mermaid diagrams in PLAN.md must match reality** — if the architecture changes, the diagrams change in the same PR. No stale diagrams.
+- **Diagrams must match reality** — PLAN.md and docs/protocol.md embed SVGs from `docs/diagrams/`; if the architecture changes, edit the `.html` source, re-export the light + dark `.svg` (diagram-design `export_svg.py --system-fonts`) in the same PR. No stale diagrams, no Mermaid.
 - Research goes in `docs/research-*.md` with cited URLs; flag marketing claims vs verified numbers.
 - Field-test results go in `docs/field-tests/` with date, location type, and measured numbers (range, battery, arrow accuracy).
 
