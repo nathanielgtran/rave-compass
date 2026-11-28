@@ -1,5 +1,6 @@
 # Changelog
 
+- chore-10: OpenSpec baseline: `openspec/config.yaml` plus 5 specs of current `firmware/lib/ravecore` behaviour (air-frame, frame-encryption, bearing-and-distance, compass-heading, token-display; 26 requirements), derived from the code and checked against it; OpenSpec section in CLAUDE.md. No firmware or behaviour change.
 - chore-9: PR body template check: `.github/workflows/pr-template.yml` calls the fleet reusable workflow in `nathanielgtran/.github` (pinned SHA) and fails PRs whose body leaves What, Why, Proof or Risk + rollback missing or empty. Bot PRs are skipped.
 - docs-8: editorial diagrams via diagram-design — PLAN.md Mermaid blocks (system overview, position→arrow sequence, token assembly, build phases) and the docs/protocol.md ASCII timing sketch redrawn as light/dark SVG (`<picture>`) in docs/diagrams/ with HTML sources + `.diagram-design` profile; content unchanged (all already single-beacon)
 - ci-2: fix native-tests workflow — drop setup-python pip cache (hard-fails when repo has no requirements.txt; workflow was red since ci-1)

@@ -1,0 +1,53 @@
+schema: spec-driven
+
+context: |
+  Project: rave-compass (public repo, hobby project). Crew-finding hardware for events with
+  no mobile signal: one anchor (beacon) broadcasts its GPS position over LoRa once a second,
+  N receive-only tokens each point an LED-ring arrow at it. Single-beacon homing, not a mesh.
+
+  Reference files (read before proposing):
+    - CLAUDE.md  - objective, locked architecture, operating constraints, doc rules
+    - PLAN.md    - architecture, BOM, build phases, design principles (bottom), Current State
+    - docs/protocol.md - air-protocol spec; docs/research-single-beacon.md - radio decisions
+
+  Tech stack (do NOT introduce alternatives without asking):
+    Language:  C++17, PlatformIO, Arduino framework on nRF52840 (Seeed Wio Tracker L1 Lite)
+    Radio:     raw LoRa via RadioLib (SX1262), AU915, SF8 / 250 kHz / CR 4/5. NOT Meshtastic.
+    Code:      firmware/lib/ravecore = pure logic, no hardware deps, host-tested.
+               firmware/src/main.cpp = role scaffold (ROLE_BEACON / ROLE_TOKEN), still a stub.
+    Tests:     Unity via `pio test -e native` (firmware/test/test_native/test_main.cpp).
+    CI:        GitHub-hosted ubuntu-latest on purpose (public repo, fork PRs never touch private infra).
+
+  Test commands (run from firmware/):
+    - pio test -e native            acceptance gate; must stay green
+    - pio run -e l1lite_token       compile-check the token role
+    - pio run -e l1lite_beacon      compile-check the beacon role
+
+  Constraints:
+    - ANZ 915-928 MHz only; 2.4 GHz is banned as the primary radio.
+    - Public repo: no personal info, credentials or venue-specific plans in committed files.
+    - Design principles (named in PLAN.md): LoRa or nothing, Ephemeral by design,
+      Degrade loudly, Consumer-finished or it doesn't ship.
+
+  Conventions:
+    - Commits: [NO-TICKET] type: description. Branch + PR always; never push master.
+    - CHANGELOG.md: newest first, incrementing IDs type-N (feat-N, ci-N, docs-N, chore-N); IDs never reset.
+    - Docs are a deliverable: every PR updates README/PLAN/CHANGELOG/docs where touched.
+    - Small functions, early returns, never swallow errors.
+
+rules:
+  proposal:
+    - Name the design principle(s) the change serves or trades off.
+    - State whether the on-air frame layout or radio parameters change; if so, docs/protocol.md changes in the same PR.
+  specs:
+    - Scenarios describe observable behaviour of ravecore functions (inputs and returned values), not internals.
+    - Describe what the code does, not what the docs hope for; planned-but-unbuilt runtime behaviour does not belong in specs/.
+  tasks:
+    - Every behaviour change gets a Unity test in firmware/test/test_native/test_main.cpp, written first.
+    - Keep each task independently reviewable.
+
+operations:
+  apply:
+    guidance:
+      - Run `pio test -e native` from firmware/ before committing.
+      - Update CHANGELOG.md, and PLAN.md / README.md / docs/ where touched, in the same PR.
