@@ -39,7 +39,15 @@ CHANGELOG.md incrementing IDs (type-N), newest first
 docs/        research reports, decisions, field-test notes
 hardware/    schematics, BOMs, enclosure CAD (mech eng mate owns CAD)
 firmware/    beacon + token firmware
+openspec/    specs of what the firmware does today + proposed changes
 ```
+
+## OpenSpec
+
+- `openspec/specs/<capability>/spec.md` is the source of truth for what `firmware/lib/ravecore` does today (5 capabilities). Read the relevant spec before changing behaviour; if code and spec disagree, treat it as a bug in one of them and say which.
+- Non-trivial changes start as `openspec/changes/<id>/` (proposal.md, delta specs, tasks.md, design.md when warranted) before code. Trivial fixes and doc-only edits skip this.
+- Run `openspec validate --strict --all` before opening a PR that touches `openspec/`. Never hand-edit `openspec/specs/` outside a change; archiving merges the deltas in.
+- `openspec/config.yaml` holds project context and per-artifact rules. Specs describe built behaviour only; the runtime loop in `firmware/src/main.cpp` is still a stub and has no spec until it is implemented.
 
 ## Documentation rules (ALWAYS)
 
