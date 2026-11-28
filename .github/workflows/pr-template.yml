@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   pr-template:
-    uses: nathanielgtran/.github/.github/workflows/pr-template-check.yml@97aa0cf4a18b815816c037ba73e7a8f7ddb3b506
+    uses: nathanielgtran/.github/.github/workflows/pr-template-check.yml@a810707c56aa01753105a56aef25f0d570028e2f
     with:
-      ref: 97aa0cf4a18b815816c037ba73e7a8f7ddb3b506
+      ref: a810707c56aa01753105a56aef25f0d570028e2f
       runs_on: '"ubuntu-latest"'
